@@ -8,6 +8,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
 import { FirebaseService } from '../config/firebase.service';
 import multer from 'multer';
+import { v4 as uuidv4 } from 'uuid';
 
 @Controller('/')
 export class UploadController {
@@ -21,7 +22,8 @@ export class UploadController {
     }
 
     const { originalname, buffer } = file;
-    const fileName = `pdfs/${Date.now()}_${originalname}`;
+    const fileId = uuidv4();
+    const fileName = `pdfs/${fileId}_${Date.now()}_${originalname}`;
     const bucket = this.firebaseService.getBucket();
     const fileReference = bucket.file(fileName);
 
@@ -29,10 +31,16 @@ export class UploadController {
       await fileReference.save(buffer, {
         contentType: 'application/pdf',
         public: true,
+        metadata: {
+          customMetadata: {
+            uploadDate: new Date().toISOString(),
+            fileId: fileId,
+          },
+        },
       });
 
       const fileUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-      return { statusCode: 200, fileUrl };
+      return { statusCode: 200, fileUrl, fileId };
     } catch (error) {
       console.error('Error uploading file:', error);
       return { statusCode: 500, message: 'Failed to upload file.' };
