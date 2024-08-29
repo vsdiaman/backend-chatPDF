@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { UploadModule } from './upload/upload.module';
-import { FirebaseModule } from './config/firebase.module';
+import { FilesModule } from './files/files.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), UploadModule, FirebaseModule],
+  imports: [FilesModule, ChatModule],
 })
 export class AppModule {}

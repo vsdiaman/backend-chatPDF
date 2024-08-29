@@ -9,7 +9,7 @@ export class FirebaseService implements OnModuleInit {
 
   async onModuleInit() {
     if (!admin.apps.length) {
-      //   const serviceAccount = import(join(__dirname, 'serviceAccountKey.json'));
+      // const serviceAccount = import(join(__dirname, 'serviceAccountKey.json'));
 
       admin.initializeApp({
         credential: admin.credential.cert(
