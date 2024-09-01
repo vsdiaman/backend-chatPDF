@@ -5,8 +5,8 @@ import { ChatService } from './chat.service';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
-  @Post()
-  async handleChat(@Body() chatInput: any) {
-    return this.chatService.processChat(chatInput);
+  @Post('completion')
+  async getCompletion(@Body('prompt') prompt: string) {
+    return await this.chatService.getCompletion(prompt);
   }
 }
