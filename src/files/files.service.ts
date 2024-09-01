@@ -11,7 +11,6 @@ export class FilesService {
     const fileReference = bucket.file(fileName);
 
     try {
-      // O buffer deve ser o único argumento para save()
       await fileReference.save(buffer, {
         contentType: 'application/pdf',
         public: true,
