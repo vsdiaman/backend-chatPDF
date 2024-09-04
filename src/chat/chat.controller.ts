@@ -7,6 +7,10 @@ export class ChatController {
 
   @Post('completion')
   async getCompletion(@Body('prompt') prompt: string) {
-    return await this.chatService.getCompletion(prompt);
+    let result = '';
+    await this.chatService.getCompletion(prompt, (data) => {
+      result += data;
+    });
+    return { Completion: result };
   }
 }

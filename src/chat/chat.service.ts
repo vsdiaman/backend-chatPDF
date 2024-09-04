@@ -38,23 +38,26 @@ export class ChatService {
     }
   }
 
-  async getCompletion(prompt: string): Promise<any> {
+  async getCompletion(
+    prompt: string,
+    onData: (data: string) => void,
+  ): Promise<void> {
     try {
       const response = await this.retryRequest(() =>
         this.openai.chat.completions.create({
           model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: prompt }],
-          max_tokens: 50,
-          temperature: 0.9,
-          top_p: 1,
-          presence_penalty: 0,
-          frequency_penalty: 0,
-          stop: ['\n', 'testing'],
+          temperature: 1,
+          stream: true,
         }),
       );
 
-      // Acesse a resposta diretamente
-      return response.choices[0].message.content;
+      for await (const chunk of response) {
+        const content = chunk.choices[0]?.delta?.content;
+        if (content) {
+          onData(content);
+        }
+      }
     } catch (error) {
       const statusCode =
         error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
