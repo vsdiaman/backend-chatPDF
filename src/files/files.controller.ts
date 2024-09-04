@@ -9,14 +9,14 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from './files.service';
 import { Express } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import multer from 'multer';
+import { memoryStorage } from 'multer';
 
 @Controller('files')
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('pdf', { storage: multer.memoryStorage() }))
+  @UseInterceptors(FileInterceptor('pdf', { storage: memoryStorage() }))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       return { statusCode: 400, message: 'No file uploaded.' };

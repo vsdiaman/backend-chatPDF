@@ -6,5 +6,6 @@ import { FirebaseService } from '../config/firebase.service';
 @Module({
   controllers: [FilesController],
   providers: [FilesService, FirebaseService],
+  exports: [FilesService],
 })
 export class FilesModule {}
