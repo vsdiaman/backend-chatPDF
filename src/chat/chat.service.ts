@@ -12,7 +12,7 @@ export class ChatService {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     if (!apiKey) {
       throw new HttpException(
-        'API Key not found',
+        'OPENAI_API_KEY is missing in configuration.',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -73,6 +73,7 @@ export class ChatService {
         {
           statusCode,
           message,
+          error: error.response?.data?.error || error.message,
         },
         statusCode,
       );

@@ -1,15 +1,16 @@
 import {
   Controller,
   Post,
-  Get,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from './files.service';
 import { Express } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import { memoryStorage } from 'multer';
+import { v4 as uuidv4 } from 'uuid';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Controller('files')
 export class FilesController {
@@ -25,18 +26,27 @@ export class FilesController {
     const fileId = uuidv4();
     const fileName = `pdfs/${fileId}_${Date.now()}_${originalname}`;
 
+    const uploadDir = path.join(__dirname, '..', 'uploads', 'pdfs'); // Diretório onde os PDFs serão salvos
+
+    // Verifica se o diretório 'pdfs' existe
+    if (!fs.existsSync(uploadDir)) {
+      // Cria o diretório 'pdfs' se ele não existir
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const filePath = path.join(uploadDir, fileName);
+
     try {
-      await this.filesService.uploadFile(fileName, buffer);
-      const fileUrl = `https://storage.googleapis.com/${this.filesService.getBucketName()}/${fileName}`;
+      // Salva o arquivo no diretório 'pdfs'
+      fs.writeFileSync(filePath, buffer);
+
+      // Retorna a URL para acessar o arquivo
+      const fileUrl = `http://localhost:3000/listpdf/${fileName}`;
+
       return { statusCode: 200, fileId, fileUrl };
     } catch (error) {
-      console.error('Error uploading file: ' + error);
+      console.error('Error uploading file: ', error);
       return { statusCode: 500, message: 'Failed to upload file' };
     }
-  }
-
-  @Get()
-  async getFiles() {
-    return this.filesService.getFiles();
   }
 }
