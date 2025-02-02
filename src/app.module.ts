@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { ChatModule } from './chat/chat.module'; // Ajuste o caminho conforme a estrutura do seu projeto
+import { FilesController } from './files/files.controller';
+import { FirebaseService } from './config/firebase.service';
 import { FilesModule } from './files/files.module';
+import { ChatModule } from './chat/chat.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }), FilesModule, ChatModule],
-  controllers: [],
-  providers: [],
+  controllers: [FilesController], // Garante que o controller está registrado
+  providers: [FirebaseService],
 })
 export class AppModule {}

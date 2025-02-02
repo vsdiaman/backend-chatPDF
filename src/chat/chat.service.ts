@@ -12,7 +12,7 @@ export class ChatService {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     if (!apiKey) {
       throw new HttpException(
-        'OPENAI_API_KEY is missing in configuration.',
+        'API Key not found',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -38,26 +38,23 @@ export class ChatService {
     }
   }
 
-  async getCompletion(
-    prompt: string,
-    onData: (data: string) => void,
-  ): Promise<void> {
+  async getCompletion(prompt: string): Promise<any> {
     try {
       const response = await this.retryRequest(() =>
         this.openai.chat.completions.create({
           model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: prompt }],
-          temperature: 1,
-          stream: true,
+          max_tokens: 50,
+          temperature: 0.9,
+          top_p: 1,
+          presence_penalty: 0,
+          frequency_penalty: 0,
+          stop: ['\n', 'testing'],
         }),
       );
 
-      for await (const chunk of response) {
-        const content = chunk.choices[0]?.delta?.content;
-        if (content) {
-          onData(content);
-        }
-      }
+      // Acesse a resposta diretamente
+      return response.choices[0].message.content;
     } catch (error) {
       const statusCode =
         error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
@@ -73,7 +70,6 @@ export class ChatService {
         {
           statusCode,
           message,
-          error: error.response?.data?.error || error.message,
         },
         statusCode,
       );

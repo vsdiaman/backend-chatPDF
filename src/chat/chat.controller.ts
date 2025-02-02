@@ -1,4 +1,10 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { ChatService } from './chat.service';
 
 @Controller('chat')
@@ -6,24 +12,21 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @Post('completion')
-  async getCompletion(@Body() body: { text: string; prompt: string }) {
-    const { text, prompt } = body;
-    let result = ''; // A variável 'result' precisa ser 'let' para poder ser alterada
+  async getCompletion(
+    @Body('pdfText') pdfText: string,
+    @Body('question') question: string,
+  ) {
+    console.log('Recebido do frontend:', { pdfText, question });
 
-    if (!text || !prompt) {
-      return {
-        statusCode: 400,
-        message: 'Texto do PDF e pergunta são obrigatórios',
-      };
+    if (!pdfText || !question) {
+      throw new HttpException(
+        'pdfText e question são obrigatórios',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
-    const chatPrompt = `Baseado no seguinte documento: "${text}", responda: ${prompt}`;
+    const prompt = `Baseado no seguinte conteúdo extraído de um PDF: "${pdfText}", responda a seguinte pergunta: "${question}"`;
 
-    // Alterando 'result' dentro do callback
-    await this.chatService.getCompletion(chatPrompt, (data) => {
-      result += data; // Aqui você vai adicionar os dados à variável 'result'
-    });
-
-    return { Completion: result }; // Agora você retorna o 'result' que foi atualizado
+    return await this.chatService.getCompletion(prompt);
   }
 }

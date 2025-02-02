@@ -5,48 +5,54 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { FilesService } from './files.service';
-import { Express } from 'express';
-import { memoryStorage } from 'multer';
+import pdfParse from 'pdf-parse';
 import { v4 as uuidv4 } from 'uuid';
-import * as fs from 'fs';
-import * as path from 'path';
+import { FirebaseService } from '../config/firebase.service';
 
 @Controller('files')
 export class FilesController {
-  constructor(private readonly filesService: FilesService) {}
+  constructor(private readonly firebaseService: FirebaseService) {}
 
-  @Post()
-  @UseInterceptors(FileInterceptor('pdf', { storage: memoryStorage() }))
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file')) // Mantém o nome correto do campo
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      return { statusCode: 400, message: 'No file uploaded.' };
-    }
-    const { originalname, buffer } = file;
-    const fileId = uuidv4();
-    const fileName = `pdfs/${fileId}_${Date.now()}_${originalname}`;
-
-    const uploadDir = path.join(__dirname, '..', 'uploads', 'pdfs'); // Diretório onde os PDFs serão salvos
-
-    // Verifica se o diretório 'pdfs' existe
-    if (!fs.existsSync(uploadDir)) {
-      // Cria o diretório 'pdfs' se ele não existir
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const filePath = path.join(uploadDir, fileName);
+    console.log(
+      'Arquivo recebido no backend:',
+      file.mimetype,
+      file.originalname,
+    );
 
     try {
-      // Salva o arquivo no diretório 'pdfs'
-      fs.writeFileSync(filePath, buffer);
+      if (file.mimetype !== 'application/pdf') {
+        return { message: 'Apenas arquivos PDF são permitidos.' };
+      }
 
-      // Retorna a URL para acessar o arquivo
-      const fileUrl = `http://localhost:3000/listpdf/${fileName}`;
+      // Converte o PDF para JSON
+      const pdfData = await pdfParse(file.buffer);
+      const jsonData = JSON.stringify({ text: pdfData.text });
 
-      return { statusCode: 200, fileId, fileUrl };
+      // Define o nome do arquivo JSON
+      const fileName = `jsons/${uuidv4()}.json`;
+
+      console.log('Salvando arquivo JSON:', fileName);
+
+      // Obtém a instância do bucket do FirebaseService
+      const bucket = this.firebaseService.getBucket();
+      const fileUpload = bucket.file(fileName);
+
+      await fileUpload.save(jsonData, {
+        contentType: 'application/json',
+      });
+
+      return {
+        message: 'Arquivo convertido e enviado com sucesso!',
+        fileName,
+        url: `https://storage.googleapis.com/${bucket.name}/${fileName}`,
+        pdfText: pdfData.text, // 🔥 Retorna o texto extraído!
+      };
     } catch (error) {
-      console.error('Error uploading file: ', error);
-      return { statusCode: 500, message: 'Failed to upload file' };
+      console.error('Erro ao processar o arquivo:', error);
+      return { message: 'Erro ao processar o arquivo.', error };
     }
   }
 }
