@@ -16,11 +16,11 @@ export class FilesController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file')) // Mantém o nome correto do campo
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
-    console.log(
-      'Arquivo recebido no backend:',
-      file.mimetype,
-      file.originalname,
-    );
+    // console.log(
+    //   'Arquivo recebido no backend:',
+    //   file.mimetype,
+    //   file.originalname,
+    // );
 
     try {
       if (file.mimetype !== 'application/pdf') {
@@ -34,7 +34,7 @@ export class FilesController {
       // Define o nome do arquivo JSON
       const fileName = `jsons/${uuidv4()}.json`;
 
-      console.log('Salvando arquivo JSON:', fileName);
+      // console.log('Salvando arquivo JSON:', fileName);
 
       // Obtém a instância do bucket do FirebaseService
       const bucket = this.firebaseService.getBucket();

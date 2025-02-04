@@ -28,7 +28,7 @@ export class ChatService {
     } catch (error) {
       if (error.response?.status === 429 && retries < this.maxRetries) {
         const delay = Math.pow(2, retries) * this.retryDelay;
-        console.log(`Retrying request... Attempt ${retries + 1}`);
+        // console.log(`Retrying request... Attempt ${retries + 1}`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         return this.retryRequest(fn, retries + 1);
       } else {

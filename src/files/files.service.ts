@@ -9,7 +9,7 @@ export class FilesService {
     const bucket = this.firebaseService.getBucket();
     const fileReference = bucket.file(fileName);
 
-    console.log('📝 Salvando arquivo JSON no Firebase:', fileName);
+    // console.log('📝 Salvando arquivo JSON no Firebase:', fileName);
 
     try {
       await fileReference.save(jsonData, {
@@ -23,7 +23,7 @@ export class FilesService {
         },
       });
 
-      console.log('✅ Upload do JSON concluído:', fileName);
+      // console.log('✅ Upload do JSON concluído:', fileName);
     } catch (error) {
       console.error('❌ Erro ao fazer upload do JSON:', error);
       throw new Error('Failed to upload JSON');
@@ -36,10 +36,10 @@ export class FilesService {
       prefix: 'jsons/', // Busca apenas arquivos JSON
     });
 
-    console.log(
-      '🔍 Arquivos encontrados no Firebase:',
-      files.map((f) => f.name),
-    );
+    // console.log(
+    //   '🔍 Arquivos encontrados no Firebase:',
+    //   files.map((f) => f.name),
+    // );
 
     return files.map((file) => ({
       name: file.name,

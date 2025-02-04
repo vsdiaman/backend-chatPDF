@@ -16,7 +16,7 @@ export class ChatController {
     @Body('pdfText') pdfText: string,
     @Body('question') question: string,
   ) {
-    console.log('Recebido do frontend:', { pdfText, question });
+    // console.log('Recebido do frontend:', { pdfText, question });
 
     if (!pdfText || !question) {
       throw new HttpException(
