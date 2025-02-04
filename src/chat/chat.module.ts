@@ -10,3 +10,5 @@ import { ChatController } from './chat.controller';
   controllers: [ChatController],
 })
 export class ChatModule {}
+
+//so p da commit
