@@ -15,7 +15,10 @@ export class FirebaseService implements OnModuleInit {
       );
     }
 
-    const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+    // Corrigir a private_key substituindo \\n por \n
+    const serviceAccount = JSON.parse(
+      process.env.SERVICE_ACCOUNT_KEY.replace(/\\n/g, '\n'),
+    );
 
     if (!admin.apps.length) {
       admin.initializeApp({
@@ -23,11 +26,12 @@ export class FirebaseService implements OnModuleInit {
         storageBucket: 'zingchat-89423.appspot.com',
       });
     }
-    this.bucket = admin.storage().bucket(); // Acesse o bucket
 
-    // Configure o cliente do Datastore
+    this.bucket = admin.storage().bucket();
+
+    // Configurar o cliente do Datastore
     this.datastore = new Datastore({
-      projectId: 'zingchat-89423',
+      projectId: serviceAccount.project_id,
       credentials: {
         private_key: serviceAccount.private_key,
         client_email: serviceAccount.client_email,
