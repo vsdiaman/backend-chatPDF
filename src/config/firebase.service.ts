@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { Datastore } from '@google-cloud/datastore';
 import { Bucket } from '@google-cloud/storage';
 import * as fs from 'fs';
-import * as path from 'path';
+// import * as path from 'path';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
