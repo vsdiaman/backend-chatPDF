@@ -2,6 +2,8 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { Datastore } from '@google-cloud/datastore';
 import { Bucket } from '@google-cloud/storage';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
@@ -9,15 +11,21 @@ export class FirebaseService implements OnModuleInit {
   private datastore: Datastore;
 
   async onModuleInit() {
+    console.log('SERVICE_ACCOUNT_KEY:', process.env.SERVICE_ACCOUNT_KEY);
+
     if (!process.env.SERVICE_ACCOUNT_KEY) {
       throw new Error(
         'SERVICE_ACCOUNT_KEY não foi encontrada nas variáveis de ambiente.',
       );
     }
+    // const serviceAccountPath = path.resolve(process.env.SERVICE_ACCOUNT_KEY);
 
     // Corrigir a private_key substituindo \\n por \n
     const serviceAccount = JSON.parse(
-      process.env.SERVICE_ACCOUNT_KEY.replace(/\\n/g, '\n'),
+      fs.readFileSync(
+        process.env.SERVICE_ACCOUNT_KEY.replace(/\\n/g, '\n'),
+        'utf8',
+      ),
     );
 
     if (!admin.apps.length) {
