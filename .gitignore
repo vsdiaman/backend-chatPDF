@@ -57,5 +57,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Ignorar arquivo de chave de conta de serviço do Google Cloud
 # Este arquivo contém credenciais sensíveis e não deve ser incluído no repositório
-# src/config/serviceAccountKey.json
+src/config/serviceAccountKey.json
 
