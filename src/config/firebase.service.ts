@@ -1,6 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import * as serviceAccount from '../config/serviceAccountKey.json'; // Ajuste o caminho conforme necessário
 import { Datastore } from '@google-cloud/datastore';
 import { Bucket } from '@google-cloud/storage';
 
@@ -10,19 +9,29 @@ export class FirebaseService implements OnModuleInit {
   private datastore: Datastore;
 
   async onModuleInit() {
+    if (!process.env.SERVICE_ACCOUNT_KEY) {
+      throw new Error(
+        'SERVICE_ACCOUNT_KEY não foi encontrada nas variáveis de ambiente.',
+      );
+    }
+
+    // Corrigir a private_key substituindo \\n por \n
+    const serviceAccount = JSON.parse(
+      process.env.SERVICE_ACCOUNT_KEY.replace(/\\n/g, '\n'),
+    );
+
     if (!admin.apps.length) {
       admin.initializeApp({
-        credential: admin.credential.cert(
-          serviceAccount as admin.ServiceAccount,
-        ),
+        credential: admin.credential.cert(serviceAccount),
         storageBucket: 'zingchat-89423.appspot.com',
       });
     }
-    this.bucket = admin.storage().bucket(); // Acesse o bucket
 
-    // Configure o cliente do Datastore
+    this.bucket = admin.storage().bucket();
+
+    // Configurar o cliente do Datastore
     this.datastore = new Datastore({
-      projectId: 'zingchat-89423',
+      projectId: serviceAccount.project_id,
       credentials: {
         private_key: serviceAccount.private_key,
         client_email: serviceAccount.client_email,
@@ -33,6 +42,7 @@ export class FirebaseService implements OnModuleInit {
   getBucket() {
     return this.bucket;
   }
+
   getDatastore() {
     return this.datastore;
   }
