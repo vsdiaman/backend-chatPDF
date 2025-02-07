@@ -1,31 +1,34 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { Datastore } from '@google-cloud/datastore';
 import { Bucket } from '@google-cloud/storage';
 import * as fs from 'fs';
-// import * as path from 'path';
+import * as path from 'path';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
   private bucket: Bucket;
   private datastore: Datastore;
+  private readonly logger = new Logger(FirebaseService.name);
 
   async onModuleInit() {
-    console.log('SERVICE_ACCOUNT_KEY:', process.env.SERVICE_ACCOUNT_KEY);
+    const serviceAccountPath = path.join(
+      process.cwd(),
+      'src/config/serviceAccountKey.json',
+    );
 
-    if (!process.env.SERVICE_ACCOUNT_KEY) {
-      throw new Error(
-        'SERVICE_ACCOUNT_KEY não foi encontrada nas variáveis de ambiente.',
+    if (!fs.existsSync(serviceAccountPath)) {
+      this.logger.error(
+        `Arquivo de credenciais não encontrado: ${serviceAccountPath}`,
       );
+      throw new Error('Credenciais do Firebase não encontradas!');
     }
-    // const serviceAccountPath = path.resolve(process.env.SERVICE_ACCOUNT_KEY);
 
-    // Corrigir a private_key substituindo \\n por \n
+    this.logger.log(
+      `Carregando credenciais do Firebase de: ${serviceAccountPath}`,
+    );
     const serviceAccount = JSON.parse(
-      fs.readFileSync(
-        process.env.SERVICE_ACCOUNT_KEY.replace(/\\n/g, '\n'),
-        'utf8',
-      ),
+      fs.readFileSync(serviceAccountPath, 'utf8'),
     );
 
     if (!admin.apps.length) {
@@ -45,6 +48,8 @@ export class FirebaseService implements OnModuleInit {
         client_email: serviceAccount.client_email,
       },
     });
+
+    this.logger.log('Firebase inicializado com sucesso!');
   }
 
   getBucket() {
@@ -55,4 +60,3 @@ export class FirebaseService implements OnModuleInit {
     return this.datastore;
   }
 }
-//so pra commitar
