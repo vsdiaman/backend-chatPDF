@@ -44,35 +44,40 @@ exports.FirebaseService = void 0;
 const common_1 = require("@nestjs/common");
 const admin = __importStar(require("firebase-admin"));
 const datastore_1 = require("@google-cloud/datastore");
-const fs = __importStar(require("fs"));
-const path = __importStar(require("path"));
+const dotenv = __importStar(require("dotenv"));
+dotenv.config();
 let FirebaseService = FirebaseService_1 = class FirebaseService {
     constructor() {
         this.logger = new common_1.Logger(FirebaseService_1.name);
     }
     async onModuleInit() {
-        const serviceAccountPath = path.join(process.cwd(), 'src/config/serviceAccountKey.json');
-        if (!fs.existsSync(serviceAccountPath)) {
-            this.logger.error(`Arquivo de credenciais não encontrado: ${serviceAccountPath}`);
+        if (!process.env.FIREBASE_PROJECT_ID ||
+            !process.env.FIREBASE_PRIVATE_KEY ||
+            !process.env.FIREBASE_CLIENT_EMAIL) {
+            this.logger.error('❌ Credenciais do Firebase não estão corretamente definidas no .env');
             throw new Error('Credenciais do Firebase não encontradas!');
         }
-        this.logger.log(`Carregando credenciais do Firebase de: ${serviceAccountPath}`);
-        const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        this.logger.log('🔥 Carregando credenciais do Firebase...');
+        const serviceAccount = {
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        };
         if (!admin.apps.length) {
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount),
-                storageBucket: 'zingchat-89423.appspot.com',
+                storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
             });
         }
         this.bucket = admin.storage().bucket();
         this.datastore = new datastore_1.Datastore({
-            projectId: serviceAccount.project_id,
+            projectId: serviceAccount.projectId,
             credentials: {
-                private_key: serviceAccount.private_key,
-                client_email: serviceAccount.client_email,
+                private_key: serviceAccount.privateKey,
+                client_email: serviceAccount.clientEmail,
             },
         });
-        this.logger.log('Firebase inicializado com sucesso!');
+        this.logger.log('✅ Firebase inicializado com sucesso!');
     }
     getBucket() {
         return this.bucket;

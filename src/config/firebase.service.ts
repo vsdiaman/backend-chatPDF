@@ -2,8 +2,6 @@ import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { Datastore } from '@google-cloud/datastore';
 import { Bucket } from '@google-cloud/storage';
-import * as fs from 'fs';
-import * as path from 'path';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -15,48 +13,47 @@ export class FirebaseService implements OnModuleInit {
   private readonly logger = new Logger(FirebaseService.name);
 
   async onModuleInit() {
-    const serviceAccount = process.env.FIREBASE_CREDENTIALS
-      ? JSON.parse(process.env.FIREBASE_CREDENTIALS)
-      : (() => {
-          const serviceAccountPath = path.join(
-            process.cwd(),
-            'src/config/serviceAccountKey.json',
-          );
+    // Verifica se as variáveis necessárias estão definidas
+    if (
+      !process.env.FIREBASE_PROJECT_ID ||
+      !process.env.FIREBASE_PRIVATE_KEY ||
+      !process.env.FIREBASE_CLIENT_EMAIL
+    ) {
+      this.logger.error(
+        '❌ Credenciais do Firebase não estão corretamente definidas no .env',
+      );
+      throw new Error('Credenciais do Firebase não encontradas!');
+    }
 
-          if (!fs.existsSync(serviceAccountPath)) {
-            this.logger.error(
-              `Arquivo de credenciais não encontrado: ${serviceAccountPath}`,
-            );
-            throw new Error('Credenciais do Firebase não encontradas!');
-          }
+    this.logger.log('🔥 Carregando credenciais do Firebase...');
 
-          this.logger.log(
-            `📁 Carregando credenciais do Firebase de: ${serviceAccountPath}`,
-          );
-          return JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8'));
-        })();
-
-    this.logger.log('🔥 Firebase inicializado com sucesso!');
+    // Monta o objeto de credenciais manualmente
+    const serviceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'), // Corrige quebras de linha
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    };
 
     if (!admin.apps.length) {
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        storageBucket: 'zingchat-89423.appspot.com',
+        credential: admin.credential.cert(
+          serviceAccount as admin.ServiceAccount,
+        ),
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
       });
     }
 
     this.bucket = admin.storage().bucket();
 
-    // 🔥 Configurar o Datastore
     this.datastore = new Datastore({
-      projectId: serviceAccount.project_id,
+      projectId: serviceAccount.projectId,
       credentials: {
-        private_key: serviceAccount.private_key.replace(/\\n/g, '\n'),
-        client_email: serviceAccount.client_email,
+        private_key: serviceAccount.privateKey,
+        client_email: serviceAccount.clientEmail,
       },
     });
 
-    this.logger.log('Firebase inicializado com sucesso!');
+    this.logger.log('✅ Firebase inicializado com sucesso!');
   }
 
   getBucket() {
