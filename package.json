@@ -46,6 +46,9 @@
     "rxjs": "^7.8.1",
     "uuid": "^10.0.0"
   },
+  "engines": {
+    "node": "16.x"
+  },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",

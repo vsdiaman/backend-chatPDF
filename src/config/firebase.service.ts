@@ -2,9 +2,7 @@ import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { Datastore } from '@google-cloud/datastore';
 import { Bucket } from '@google-cloud/storage';
-import * as dotenv from 'dotenv';
-
-dotenv.config();
+import * as fs from 'fs';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
@@ -13,47 +11,37 @@ export class FirebaseService implements OnModuleInit {
   private readonly logger = new Logger(FirebaseService.name);
 
   async onModuleInit() {
-    // Verifica se as variáveis necessárias estão definidas
-    if (
-      !process.env.FIREBASE_PROJECT_ID ||
-      !process.env.FIREBASE_PRIVATE_KEY ||
-      !process.env.FIREBASE_CLIENT_EMAIL
-    ) {
-      this.logger.error(
-        '❌ Credenciais do Firebase não estão corretamente definidas no .env',
+    try {
+      this.logger.log('🔥 Carregando credenciais do Firebase...');
+
+      // Lê e parseia o arquivo JSON
+      const serviceAccount = JSON.parse(
+        fs.readFileSync('src/config/zingchat-89423-a9335bee30a4.json', 'utf-8'),
       );
-      throw new Error('Credenciais do Firebase não encontradas!');
-    }
 
-    this.logger.log('🔥 Carregando credenciais do Firebase...');
+      // Inicializa o Firebase Admin SDK
+      if (!admin.apps.length) {
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          storageBucket: serviceAccount.project_id + '.appspot.com',
+        });
+      }
 
-    // Monta o objeto de credenciais manualmente
-    const serviceAccount = {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'), // Corrige quebras de linha
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    };
+      this.bucket = admin.storage().bucket();
 
-    if (!admin.apps.length) {
-      admin.initializeApp({
-        credential: admin.credential.cert(
-          serviceAccount as admin.ServiceAccount,
-        ),
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+      this.datastore = new Datastore({
+        projectId: serviceAccount.project_id,
+        credentials: {
+          private_key: serviceAccount.private_key,
+          client_email: serviceAccount.client_email,
+        },
       });
+
+      this.logger.log('✅ Firebase inicializado com sucesso!');
+    } catch (error) {
+      this.logger.error('❌ Erro ao inicializar Firebase:', error);
+      throw new Error('Falha ao carregar credenciais do Firebase');
     }
-
-    this.bucket = admin.storage().bucket();
-
-    this.datastore = new Datastore({
-      projectId: serviceAccount.projectId,
-      credentials: {
-        private_key: serviceAccount.privateKey,
-        client_email: serviceAccount.clientEmail,
-      },
-    });
-
-    this.logger.log('✅ Firebase inicializado com sucesso!');
   }
 
   getBucket() {
