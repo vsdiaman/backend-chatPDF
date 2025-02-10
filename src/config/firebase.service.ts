@@ -28,7 +28,7 @@ export class FirebaseService implements OnModuleInit {
       `Carregando credenciais do Firebase de: ${serviceAccountPath}`,
     );
     const serviceAccount = JSON.parse(
-      Buffer.from(serviceAccountPath, 'base64').toString('utf-8'),
+      fs.readFileSync(serviceAccountPath, 'utf8'),
     );
 
     if (!admin.apps.length) {

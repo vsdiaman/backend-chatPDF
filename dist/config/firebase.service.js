@@ -57,7 +57,7 @@ let FirebaseService = FirebaseService_1 = class FirebaseService {
             throw new Error('Credenciais do Firebase não encontradas!');
         }
         this.logger.log(`Carregando credenciais do Firebase de: ${serviceAccountPath}`);
-        const serviceAccount = JSON.parse(Buffer.from(serviceAccountPath, 'base64').toString('utf-8'));
+        const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
         if (!admin.apps.length) {
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount),
