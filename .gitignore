@@ -59,3 +59,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Este arquivo contém credenciais sensíveis e não deve ser incluído no repositório
 src/config/serviceAccountKey.json
 
+src/config/serviceAccountKey.json
+src/config/serviceAccountKeyREMOVE.json
