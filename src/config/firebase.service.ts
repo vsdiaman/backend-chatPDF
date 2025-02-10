@@ -15,36 +15,29 @@ export class FirebaseService implements OnModuleInit {
   private readonly logger = new Logger(FirebaseService.name);
 
   async onModuleInit() {
-    let serviceAccount: any;
+    const serviceAccount = process.env.FIREBASE_CREDENTIALS
+      ? JSON.parse(process.env.FIREBASE_CREDENTIALS)
+      : (() => {
+          const serviceAccountPath = path.join(
+            process.cwd(),
+            'src/config/serviceAccountKey.json',
+          );
 
-    if (process.env.FIREBASE_CREDENTIALS) {
-      this.logger.log('🔥 Carregando credenciais do Firebase do Railway...');
-      try {
-        serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
-      } catch (error) {
-        this.logger.error('❌ Erro ao carregar FIREBASE_CREDENTIALS:', error);
-        throw new Error('FIREBASE_CREDENTIALS está mal formatado!');
-      }
-    } else {
-      const serviceAccountPath = path.join(
-        process.cwd(),
-        'src/config/serviceAccountKey.json',
-      );
+          if (!fs.existsSync(serviceAccountPath)) {
+            this.logger.error(
+              `Arquivo de credenciais não encontrado: ${serviceAccountPath}`,
+            );
+            throw new Error('Credenciais do Firebase não encontradas!');
+          }
 
-      if (!fs.existsSync(serviceAccountPath)) {
-        this.logger.error(
-          `❌ Arquivo de credenciais não encontrado: ${serviceAccountPath}`,
-        );
-        throw new Error('Credenciais do Firebase não encontradas!');
-      }
+          this.logger.log(
+            `📁 Carregando credenciais do Firebase de: ${serviceAccountPath}`,
+          );
+          return JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8'));
+        })();
 
-      this.logger.log(
-        `📁 Carregando credenciais do Firebase de: ${serviceAccountPath}`,
-      );
-      serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8'));
-    }
+    this.logger.log('🔥 Firebase inicializado com sucesso!');
 
-    // 🔥 Inicializar Firebase
     if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
@@ -58,12 +51,12 @@ export class FirebaseService implements OnModuleInit {
     this.datastore = new Datastore({
       projectId: serviceAccount.project_id,
       credentials: {
-        private_key: serviceAccount.private_key.replace(/\\n/g, '\n'), // Corrigir quebras de linha
+        private_key: serviceAccount.private_key.replace(/\\n/g, '\n'),
         client_email: serviceAccount.client_email,
       },
     });
 
-    this.logger.log('✅ Firebase inicializado com sucesso!');
+    this.logger.log('Firebase inicializado com sucesso!');
   }
 
   getBucket() {
