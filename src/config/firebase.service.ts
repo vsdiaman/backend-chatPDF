@@ -4,6 +4,9 @@ import { Datastore } from '@google-cloud/datastore';
 import { Bucket } from '@google-cloud/storage';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
@@ -27,9 +30,7 @@ export class FirebaseService implements OnModuleInit {
     this.logger.log(
       `Carregando credenciais do Firebase de: ${serviceAccountPath}`,
     );
-    const serviceAccount = JSON.parse(
-      fs.readFileSync(serviceAccountPath, 'utf8'),
-    );
+    const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS || '{}');
 
     if (!admin.apps.length) {
       admin.initializeApp({
