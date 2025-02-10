@@ -15,23 +15,36 @@ export class FirebaseService implements OnModuleInit {
   private readonly logger = new Logger(FirebaseService.name);
 
   async onModuleInit() {
-    const serviceAccountPath = path.join(
-      process.cwd(),
-      'src/config/serviceAccountKey.json',
-    );
+    let serviceAccount: any;
 
-    if (!fs.existsSync(serviceAccountPath)) {
-      this.logger.error(
-        `Arquivo de credenciais não encontrado: ${serviceAccountPath}`,
+    if (process.env.FIREBASE_CREDENTIALS) {
+      // 🔥 Carregar credenciais do Railway
+      this.logger.log(
+        'Carregando credenciais do Firebase a partir das variáveis de ambiente...',
       );
-      throw new Error('Credenciais do Firebase não encontradas!');
+      console.log('FIREBASE_CREDENTIALS:', process.env.FIREBASE_CREDENTIALS);
+      serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+    } else {
+      // 📁 Carregar credenciais do arquivo local (para desenvolvimento)
+      const serviceAccountPath = path.join(
+        process.cwd(),
+        'src/config/serviceAccountKey.json',
+      );
+
+      if (!fs.existsSync(serviceAccountPath)) {
+        this.logger.error(
+          `Arquivo de credenciais não encontrado: ${serviceAccountPath}`,
+        );
+        throw new Error('Credenciais do Firebase não encontradas!');
+      }
+
+      this.logger.log(
+        `Carregando credenciais do Firebase de: ${serviceAccountPath}`,
+      );
+      serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8'));
     }
 
-    this.logger.log(
-      `Carregando credenciais do Firebase de: ${serviceAccountPath}`,
-    );
-    const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS || '{}');
-
+    // 🔥 Inicializar Firebase
     if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
@@ -41,11 +54,11 @@ export class FirebaseService implements OnModuleInit {
 
     this.bucket = admin.storage().bucket();
 
-    // Configurar o cliente do Datastore
+    // 🔥 Configurar o Datastore
     this.datastore = new Datastore({
       projectId: serviceAccount.project_id,
       credentials: {
-        private_key: serviceAccount.private_key,
+        private_key: serviceAccount.private_key.replace(/\\n/g, '\n'), // Corrigir quebras de linha
         client_email: serviceAccount.client_email,
       },
     });
