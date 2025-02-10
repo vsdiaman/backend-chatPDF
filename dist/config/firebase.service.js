@@ -44,7 +44,8 @@ exports.FirebaseService = void 0;
 const common_1 = require("@nestjs/common");
 const admin = __importStar(require("firebase-admin"));
 const datastore_1 = require("@google-cloud/datastore");
-const fs = __importStar(require("fs"));
+const dotenv = __importStar(require("dotenv"));
+dotenv.config();
 let FirebaseService = FirebaseService_1 = class FirebaseService {
     constructor() {
         this.logger = new common_1.Logger(FirebaseService_1.name);
@@ -52,11 +53,26 @@ let FirebaseService = FirebaseService_1 = class FirebaseService {
     async onModuleInit() {
         try {
             this.logger.log('🔥 Carregando credenciais do Firebase...');
-            const serviceAccount = JSON.parse(fs.readFileSync('src/config/zingchat-89423-a9335bee30a4.json', 'utf-8'));
+            const serviceAccount = {
+                type: process.env.TYPE,
+                project_id: process.env.PROJECT_ID,
+                private_key_id: process.env.PRIVATE_KEY_ID,
+                private_key: process.env.PRIVATE_KEY?.replace(/\\n/g, '\n'),
+                client_email: process.env.CLIENT_EMAIL,
+                client_id: process.env.CLIENT_ID,
+                auth_uri: process.env.AUTH_URI,
+                token_uri: process.env.TOKEN_URI,
+                auth_provider_x509_cert_url: process.env.AUTH_PROVIDER_CERT_URL,
+                client_x509_cert_url: process.env.CLIENT_X509_CERT_URL,
+                universe_domain: process.env.UNIVERSE_DOMAIN,
+            };
+            if (!serviceAccount.private_key || !serviceAccount.client_email) {
+                throw new Error('❌ Credenciais do Firebase ausentes no .env!');
+            }
             if (!admin.apps.length) {
                 admin.initializeApp({
                     credential: admin.credential.cert(serviceAccount),
-                    storageBucket: serviceAccount.project_id + '.appspot.com',
+                    storageBucket: `${serviceAccount.project_id}.appspot.com`,
                 });
             }
             this.bucket = admin.storage().bucket();
