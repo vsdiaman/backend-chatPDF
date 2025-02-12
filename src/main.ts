@@ -1,8 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
+import { Controller, Get } from '@nestjs/common';
 dotenv.config();
 
+@Controller()
+export class AppController {
+  @Get()
+  getHome() {
+    return { message: 'API Online 🚀' };
+  }
+}
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
