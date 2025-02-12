@@ -20,6 +20,7 @@ let ChatController = class ChatController {
         this.chatService = chatService;
     }
     async getCompletion(pdfText, question) {
+        console.log('Recebido do frontend:', { pdfText, question });
         if (!pdfText || !question) {
             throw new common_1.HttpException('pdfText e question são obrigatórios', common_1.HttpStatus.BAD_REQUEST);
         }
