@@ -13,7 +13,10 @@ async function bootstrap() {
     credentials: true,
   });
 
-  const port = process.env.PORT || 4000; // Usa a porta do Railway ou 4000 como fallback
-  await app.listen(port, '0.0.0.0');
+  const PORT = process.env.PORT || 4000;
+  await app.listen(PORT, () =>
+    console.log(`🚀 Server running on port ${PORT}`),
+  );
+  await app.listen(PORT, '0.0.0.0');
 }
 bootstrap();
