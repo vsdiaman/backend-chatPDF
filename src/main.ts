@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
 import { Controller, Get } from '@nestjs/common';
+
 dotenv.config();
 
 @Controller()
@@ -11,6 +12,7 @@ export class AppController {
     return { message: 'API Online 🚀' };
   }
 }
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api'); // Opcional, se quiser prefixar as rotas com /api
@@ -26,9 +28,9 @@ async function bootstrap() {
   });
 
   const PORT = process.env.PORT || 4000;
-  await app.listen(PORT, () =>
+  await app.listen(PORT, '0.0.0.0', () =>
     console.log(`🚀 Server running on port ${PORT}`),
   );
-  await app.listen(PORT, '0.0.0.0');
 }
+
 bootstrap();

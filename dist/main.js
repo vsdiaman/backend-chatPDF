@@ -74,8 +74,7 @@ async function bootstrap() {
         credentials: true,
     });
     const PORT = process.env.PORT || 4000;
-    await app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-    await app.listen(PORT, '0.0.0.0');
+    await app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server running on port ${PORT}`));
 }
 bootstrap();
 //# sourceMappingURL=main.js.map
