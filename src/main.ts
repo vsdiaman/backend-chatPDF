@@ -18,7 +18,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api'); // Opcional, se quiser prefixar as rotas com /api
 
   // Registra o controlador principal
-  app.use('/', (req, res) => res.json({ message: 'API Online 🚀' }));
+  // app.use('/', (req, res) => res.json({ message: 'API Online 🚀' }));
 
   app.enableCors({
     origin: ['https://www.askpdf.cloud', 'http://localhost:3000'], // Adicione localhost para testes
