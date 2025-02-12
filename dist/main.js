@@ -15,6 +15,12 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
 var __importStar = (this && this.__importStar) || (function () {
     var ownKeys = function(o) {
         ownKeys = Object.getOwnPropertyNames || function (o) {
@@ -32,20 +38,44 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.AppController = void 0;
 const core_1 = require("@nestjs/core");
 const app_module_1 = require("./app.module");
 const dotenv = __importStar(require("dotenv"));
+const common_1 = require("@nestjs/common");
 dotenv.config();
+let AppController = class AppController {
+    getHome() {
+        return { message: 'API Online 🚀' };
+    }
+};
+exports.AppController = AppController;
+__decorate([
+    (0, common_1.Get)(),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AppController.prototype, "getHome", null);
+exports.AppController = AppController = __decorate([
+    (0, common_1.Controller)()
+], AppController);
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    app.setGlobalPrefix('api');
+    app.use('/', (req, res) => res.json({ message: 'API Online 🚀' }));
     app.enableCors({
         origin: ['https://www.askpdf.cloud', 'http://localhost:3000'],
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
     });
-    await app.listen(4000);
+    const PORT = process.env.PORT || 4000;
+    await app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    await app.listen(PORT, '0.0.0.0');
 }
 bootstrap();
 //# sourceMappingURL=main.js.map
