@@ -65,7 +65,6 @@ exports.AppController = AppController = __decorate([
 ], AppController);
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
-    app.setGlobalPrefix('api');
     app.enableCors({
         origin: ['https://www.askpdf.cloud', 'http://localhost:3000'],
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

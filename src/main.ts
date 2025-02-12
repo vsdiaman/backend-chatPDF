@@ -15,7 +15,6 @@ export class AppController {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api'); // Opcional, se quiser prefixar as rotas com /api
 
   // Registra o controlador principal
   // app.use('/', (req, res) => res.json({ message: 'API Online 🚀' }));
