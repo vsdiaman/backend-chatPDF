@@ -44,7 +44,7 @@ export class ChatService {
         this.openai.chat.completions.create({
           model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: prompt }],
-          max_tokens: 50,
+          max_tokens: 5000,
           temperature: 0.9,
           top_p: 1,
           presence_penalty: 0,
