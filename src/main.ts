@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
 import { Controller, Get } from '@nestjs/common';
+import * as bodyParser from 'body-parser';
 
 dotenv.config();
 
@@ -16,11 +17,13 @@ export class AppController {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
   // Registra o controlador principal
   // app.use('/', (req, res) => res.json({ message: 'API Online 🚀' }));
 
   app.enableCors({
-    origin: ['https://www.askpdf.cloud', 'http://localhost:3000'], // Adicione localhost para testes
+    origin: '*', // 🔥 Permite qualquer origem (apenas para testes locais!)
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,

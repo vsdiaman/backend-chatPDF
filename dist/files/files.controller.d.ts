@@ -6,12 +6,14 @@ export declare class FilesController {
         message: string;
         fileName?: undefined;
         url?: undefined;
+        fileId?: undefined;
         pdfText?: undefined;
         error?: undefined;
     } | {
         message: string;
         fileName: string;
         url: string;
+        fileId: any;
         pdfText: string;
         error?: undefined;
     } | {
@@ -19,6 +21,23 @@ export declare class FilesController {
         error: any;
         fileName?: undefined;
         url?: undefined;
+        fileId?: undefined;
         pdfText?: undefined;
+    }>;
+    getFile(fileId: string): Promise<{
+        message: string;
+        fileId?: undefined;
+        data?: undefined;
+        error?: undefined;
+    } | {
+        fileId: string;
+        data: any;
+        message?: undefined;
+        error?: undefined;
+    } | {
+        message: string;
+        error: any;
+        fileId?: undefined;
+        data?: undefined;
     }>;
 }

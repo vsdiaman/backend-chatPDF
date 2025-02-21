@@ -47,6 +47,7 @@ const core_1 = require("@nestjs/core");
 const app_module_1 = require("./app.module");
 const dotenv = __importStar(require("dotenv"));
 const common_1 = require("@nestjs/common");
+const bodyParser = __importStar(require("body-parser"));
 dotenv.config();
 let AppController = class AppController {
     getHome() {
@@ -65,8 +66,10 @@ exports.AppController = AppController = __decorate([
 ], AppController);
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    app.use(bodyParser.json({ limit: '50mb' }));
+    app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
     app.enableCors({
-        origin: ['https://www.askpdf.cloud', 'http://localhost:3000'],
+        origin: '*',
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,

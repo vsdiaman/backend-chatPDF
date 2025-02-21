@@ -26,28 +26,53 @@ let FilesController = class FilesController {
         this.firebaseService = firebaseService;
     }
     async uploadFile(file) {
+        console.log('Arquivo recebido:', file);
+        console.log('Arquivo recebido no backend:', file.mimetype, file.originalname);
         try {
             if (file.mimetype !== 'application/pdf') {
                 return { message: 'Apenas arquivos PDF são permitidos.' };
             }
             const pdfData = await (0, pdf_parse_1.default)(file.buffer);
-            const jsonData = JSON.stringify({ text: pdfData.text });
-            const fileName = `jsons/${(0, uuid_1.v4)()}.json`;
+            const jsonData = { text: pdfData.text };
+            const fileId = (0, uuid_1.v4)();
+            const fileName = `jsons/${fileId}.json`;
             const bucket = this.firebaseService.getBucket();
             const fileUpload = bucket.file(fileName);
-            await fileUpload.save(jsonData, {
+            await fileUpload.save(JSON.stringify(jsonData), {
                 contentType: 'application/json',
+                metadata: {
+                    metadata: { fileId },
+                },
             });
             return {
                 message: 'Arquivo convertido e enviado com sucesso!',
                 fileName,
                 url: `https://storage.googleapis.com/${bucket.name}/${fileName}`,
+                fileId,
                 pdfText: pdfData.text,
             };
         }
         catch (error) {
             console.error('Erro ao processar o arquivo:', error);
             return { message: 'Erro ao processar o arquivo.', error };
+        }
+    }
+    async getFile(fileId) {
+        try {
+            const filePath = `jsons/${fileId}.json`;
+            const bucket = this.firebaseService.getBucket();
+            const file = bucket.file(filePath);
+            const [exists] = await file.exists();
+            if (!exists) {
+                return { message: 'Arquivo não encontrado.' };
+            }
+            const [content] = await file.download();
+            const jsonData = JSON.parse(content.toString());
+            return { fileId, data: jsonData };
+        }
+        catch (error) {
+            console.error('Erro ao buscar arquivo:', error);
+            return { message: 'Erro ao buscar o arquivo.', error };
         }
     }
 };
@@ -60,6 +85,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], FilesController.prototype, "uploadFile", null);
+__decorate([
+    (0, common_1.Get)(':fileId'),
+    __param(0, (0, common_1.Param)('fileId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], FilesController.prototype, "getFile", null);
 exports.FilesController = FilesController = __decorate([
     (0, common_1.Controller)('files'),
     __metadata("design:paramtypes", [firebase_service_1.FirebaseService])
