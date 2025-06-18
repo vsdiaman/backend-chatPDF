@@ -23,7 +23,7 @@ async function bootstrap() {
   // app.use('/', (req, res) => res.json({ message: 'API Online 🚀' }));
 
   app.enableCors({
-    origin: '*', // 🔥 Permite qualquer origem (apenas para testes locais!)
+    origin: 'https://www.askpdf.cloud',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,

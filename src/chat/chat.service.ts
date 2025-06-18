@@ -1,78 +1,73 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OpenAI } from 'openai';
 
+type ChatMsg = { role: 'system' | 'user' | 'assistant'; content: string };
+
 @Injectable()
 export class ChatService {
-  private readonly maxRetries = 5;
-  private readonly retryDelay = 1000;
-  private openai: OpenAI;
+  private readonly openai: OpenAI;
+  private readonly model = 'gpt-4o';
 
-  constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
-    if (!apiKey) {
-      throw new HttpException(
-        'API Key not found',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-    this.openai = new OpenAI({ apiKey });
+  constructor(cfg: ConfigService) {
+    const key = cfg.get<string>('OPENAI_API_KEY');
+    if (!key) throw new Error('OPENAI_API_KEY não definido');
+    this.openai = new OpenAI({ apiKey: key });
   }
 
-  private async retryRequest<T>(
-    fn: () => Promise<T>,
-    retries: number = 5,
-  ): Promise<T> {
+  /** Helper de retry (já era seu) ------------------------- */
+  private async retryRequest<T>(fn: () => Promise<T>, attempt = 0): Promise<T> {
     try {
       return await fn();
-    } catch (error) {
-      if (error.response?.status === 429 && retries < this.maxRetries) {
-        const delay = Math.pow(2, retries) * this.retryDelay;
-        // console.log(`Retrying request... Attempt ${retries + 1}`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        return this.retryRequest(fn, retries + 1);
-      } else {
-        console.error('Error details:', error.response?.data || error.message);
-        throw error;
+    } catch (e: any) {
+      if (e.response?.status === 429 && attempt < 5) {
+        await new Promise((r) => setTimeout(r, 2 ** attempt * 1000));
+        return this.retryRequest(fn, attempt + 1);
       }
+      throw e;
     }
   }
 
-  async getCompletion(prompt: string): Promise<any> {
-    try {
-      const response = await this.retryRequest(() =>
+  /** ------------------------------------------------------- */
+  async getCompletion(prompt: string): Promise<string> {
+    /* 1. monta as mensagens */
+    const messages: ChatMsg[] = [
+      {
+        role: 'system',
+        content:
+          'Você é um advogado virtual experiente. Explique em linguagem simples e oriente o usuário.',
+      },
+      { role: 'user', content: prompt },
+    ];
+
+    let fullAnswer = '';
+    let done = false;
+
+    /* 2. loop enquanto o modelo cortar por length */
+    while (!done) {
+      const resp = await this.retryRequest(() =>
         this.openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          // max_tokens: 5000,
-          temperature: 0.9,
-          top_p: 1,
-          presence_penalty: 0,
-          frequency_penalty: 0,
-          stop: ['\n', 'testing'],
+          model: this.model,
+          messages,
+          max_tokens: 4096, // 0 ==> “todo espaço restante” (também funciona)
+          temperature: 0.3,
         }),
       );
 
-      // Acesse a resposta diretamente
-      return response.choices[0].message.content;
-    } catch (error) {
-      const statusCode =
-        error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
-      const message = error.response?.data?.error?.message || error.message;
+      const chunk = resp.choices[0]?.message?.content ?? '';
+      fullAnswer += chunk;
 
-      console.error('Error calling OpenAI API:', { statusCode, message });
-
-      if (statusCode === 429) {
-        console.log('Cota excedida. Considere pausar ou aumentar o limite.');
+      /* 3. verifica motivo de término */
+      if (resp.choices[0].finish_reason === 'length') {
+        // adiciona contexto para a próxima chamada
+        messages.push({ role: 'assistant', content: chunk });
+        messages.push({ role: 'user', content: 'Continue…' });
+        // e continua o while
+      } else {
+        done = true;
       }
-
-      throw new HttpException(
-        {
-          statusCode,
-          message,
-        },
-        statusCode,
-      );
     }
+
+    return fullAnswer;
   }
 }
