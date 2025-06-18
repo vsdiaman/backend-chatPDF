@@ -15,21 +15,32 @@ type Msg = ChatCompletionMessageParam & { role: Role };
 @Injectable()
 export class ChatService {
   private readonly openai: OpenAI;
-  private readonly model = 'gpt-4o'; // troque por modelo fine-tuned quando houver
+  private readonly model = 'gpt-4o'; // troque aqui se fizer fine-tuning
   private readonly logger = new Logger(ChatService.name);
 
-  /** Prompt base que define o “personagem” advogada virtual */
+  /** Persona (system prompt) ------------------------------------------------ */
   private readonly systemPrompt = `
 Você é a **Doutora IA**, advogada inscrita na OAB-SP 999.999.
-Objetivo: explicar documentos jurídicos a leigos de forma clara e objetiva,  
-citar artigos pertinentes e sugerir próximos passos práticos.
+Objetivo: explicar documentos jurídicos a leigos, citar artigos
+pertinentes e sugerir próximos passos práticos.
 
-• Jurisdição principal: Brasil – priorize Código Civil, CLT e legislação federal.  
+• Jurisdição: Brasil – priorize Código Civil, CLT e legislação federal.  
 • Sempre inclua o disclaimer:  
   “Esta resposta é apenas informativa e não substitui consulta a profissional habilitado.”  
 • Se faltar contexto, faça perguntas de triagem antes de concluir.  
 • Caso o usuário solicite algo ilegal ou antiético, recuse educadamente.  
 • Responda em português formal, tom feminino, máx. 450 palavras.
+`.trim();
+
+  /** Mensagem de boas-vindas ------------------------------------------------- */
+  private readonly welcomeMessage = `
+Olá, seja muito bem-vindo(a)! 🖐️  
+  
+Sou a **Doutora IA**, sua advogada virtual.  
+Posso explicar contratos, petições ou artigos de lei em linguagem simples  
+e orientá-lo(a) sobre seus direitos e obrigações.  
+
+Em que posso ajudar hoje?
 `.trim();
 
   constructor(cfg: ConfigService) {
@@ -39,19 +50,26 @@ citar artigos pertinentes e sugerir próximos passos práticos.
   }
 
   /**
-   * Gera uma resposta textual.
-   * @param prompt Pergunta ou instrução do usuário.
-   * @param context  Trechos contextuais opcionais (RAG). Cada string deve ser curta (≤ 200 tokens).
+   * Se `prompt` vier vazio → devolve apenas a mensagem de boas-vindas.
+   * Caso contrário, gera resposta jurídica respeitando o prompt base.
+   *
+   * @param prompt   Pergunta do usuário (pode ser string vazia)
+   * @param context  Snippets externos (RAG) opcional
    */
   async getCompletion(prompt: string, context: string[] = []): Promise<string> {
-    /** 1. Monta a lista de mensagens */
+    /* 0. Boas-vindas -------------------------------------------------------- */
+    if (!prompt || !prompt.trim()) {
+      return this.welcomeMessage;
+    }
+
+    /* 1. Montagem das mensagens -------------------------------------------- */
     const messages: Msg[] = [
       { role: 'system', content: this.systemPrompt },
       ...this.buildContextMessages(context),
       { role: 'user', content: prompt },
     ];
 
-    /** 2. Faz chamadas encadeadas até concluir ou atingir limite de tokens */
+    /* 2. Loop de completions (continua…) ------------------------------------ */
     let fullAnswer = '';
     let done = false;
 
@@ -60,7 +78,7 @@ citar artigos pertinentes e sugerir próximos passos práticos.
         const resp = await this.openai.chat.completions.create({
           model: this.model,
           messages,
-          max_tokens: 448,
+          max_tokens: 448, // ajuste se precisar de respostas maiores
           temperature: 0.3,
         });
 
@@ -68,17 +86,18 @@ citar artigos pertinentes e sugerir próximos passos práticos.
         const chunk = choice.message.content ?? '';
         fullAnswer += chunk;
 
-        const usage = resp.usage;
-        if (usage) {
+        /* Logagem opcional de custos --------------------------------------- */
+        if (resp.usage) {
+          const u = resp.usage;
           this.logger.verbose(
-            `Prompt ${usage.prompt_tokens} tokens | Completion ${usage.completion_tokens} tokens`,
+            `Prompt ${u.prompt_tokens} | Completion ${u.completion_tokens}`,
           );
         }
 
         if (choice.finish_reason === 'length') {
-          // Armazena o que o modelo escreveu…
+          // guarda o trecho gerado…
           messages.push({ role: 'assistant', content: chunk });
-          // …e pede continuação
+          // …pede continuação
           messages.push({ role: 'user', content: 'Continue…' });
         } else {
           done = true; // "stop" ou "content_filter"
@@ -89,7 +108,7 @@ citar artigos pertinentes e sugerir próximos passos práticos.
       }
     }
 
-    /** 3. Garante que o disclaimer esteja presente */
+    /* 3. Garante disclaimer jurídico --------------------------------------- */
     if (!/não substitui consulta a profissional habilitado/i.test(fullAnswer)) {
       fullAnswer +=
         '\n\n*Esta resposta é apenas informativa e não substitui consulta a profissional habilitado.*';
@@ -98,17 +117,11 @@ citar artigos pertinentes e sugerir próximos passos práticos.
     return fullAnswer.trim();
   }
 
-  // ------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
   // Helpers
-  // ------------------------------------------------------------------------
-
-  /**
-   * Converte trechos externos em mensagens “system” para RAG.
-   * Cada trecho deve ser curto → evita estouro de contexto.
-   */
+  // -------------------------------------------------------------------------
   private buildContextMessages(snippets: string[]): Msg[] {
     if (snippets.length === 0) return [];
-
     const header =
       'Utilize obrigatoriamente os trechos de referência abaixo ao elaborar a resposta:\n';
     const body = snippets.map((s, i) => `Fonte ${i + 1}:\n${s}`).join('\n\n');
