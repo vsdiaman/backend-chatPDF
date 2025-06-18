@@ -24,7 +24,7 @@ export class ChatService {
       const resp = await this.openai.chat.completions.create({
         model: this.model,
         messages,
-        max_tokens: 2048, // o que couber em uma chamada
+        max_tokens: 448, // o que couber em uma chamada
         temperature: 0.3,
       });
 
